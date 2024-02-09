@@ -188,20 +188,7 @@ class _HomePageState extends State<HomePage> {
         return const SizedBox.shrink();
       } else {
         return TextButton(
-          onPressed: () {
-            // if (KeyboardUtils.isKeyboardShowing()) {
-            //   KeyboardUtils.closeKeyboard(context);
-            // }
-            // Navigator.push(
-            //     context,
-            //     MaterialPageRoute(
-            //         builder: (context) => ChatPage(
-            //           peerId: userChat.id,
-            //           peerAvatar: userChat.photoUrl,
-            //           peerNickname: userChat.displayName,
-            //           userAvatar: firebaseAuth.currentUser!.photoURL!,
-            //         )));
-          },
+          onPressed: () {},
           child: ListTile(
             leading: userChat.photoUrl.isNotEmpty
                 ? ClipRRect(
