@@ -1,12 +1,15 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:chat_app/domain/chat_user_model.dart';
+import 'package:chat_app/domain/constants.dart';
 import 'package:chat_app/presentation/pages/login.dart';
 import 'package:chat_app/presentation/provider/home_provider.dart';
 import 'package:chat_app/presentation/provider/auth_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:provider/provider.dart'as prefix;
-
+import 'package:provider/provider.dart' as prefix;
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -28,12 +31,9 @@ class _HomePageState extends State<HomePage> {
   late String currentUserId;
   late HomeProvider homeProvider;
 
-
- // Debouncer searchDebouncer = Debouncer(milliseconds: 300);
+  // Debouncer searchDebouncer = Debouncer(milliseconds: 300);
   StreamController<bool> buttonClearController = StreamController<bool>();
   TextEditingController searchTextEditingController = TextEditingController();
-
-
 
   @override
   void dispose() {
@@ -52,7 +52,7 @@ class _HomePageState extends State<HomePage> {
     } else {
       Navigator.of(context as BuildContext).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => const LoginPage()),
-              (Route<dynamic> route) => false);
+          (Route<dynamic> route) => false);
     }
     scrollController.addListener(scrollListener);
   }
@@ -69,6 +69,50 @@ class _HomePageState extends State<HomePage> {
           IconButton(onPressed: () {}, icon: const Icon(Icons.person)),
         ],
       ),
+      body: WillPopScope(
+          onWillPop: onBackPress,
+          child: Stack(
+            children: [
+              Column(
+                children: [
+                  buildSearchBar(),
+                  Expanded(
+                    child: StreamBuilder<QuerySnapshot>(
+                      stream: homeProvider.getFirestoreData(
+                          FirestoreConstants.pathUserCollection,
+                          _limit,
+                          _textSearch),
+                      builder: (BuildContext context,
+                          AsyncSnapshot<QuerySnapshot> snapshot) {
+                        if (snapshot.hasData) {
+                          if ((snapshot.data?.docs.length ?? 0) > 0) {
+                            return ListView.separated(
+                              shrinkWrap: true,
+                              itemCount: snapshot.data!.docs.length,
+                              itemBuilder: (context, index) => buildItem(
+                                  context, snapshot.data?.docs[index]),
+                              controller: scrollController,
+                              separatorBuilder:
+                                  (BuildContext context, int index) =>
+                                      const Divider(),
+                            );
+                          } else {
+                            return const Center(
+                              child: Text('No user found...'),
+                            );
+                          }
+                        } else {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          )),
     );
   }
 
@@ -136,13 +180,83 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget buildItem(BuildContext context, DocumentSnapshot? documentSnapshot) {
+    final firebaseAuth = FirebaseAuth.instance;
+    if (documentSnapshot != null) {
+      ChatUser userChat = ChatUser.fromDocument(documentSnapshot);
+      if (userChat.id == currentUserId) {
+        return const SizedBox.shrink();
+      } else {
+        return TextButton(
+          onPressed: () {
+            // if (KeyboardUtils.isKeyboardShowing()) {
+            //   KeyboardUtils.closeKeyboard(context);
+            // }
+            // Navigator.push(
+            //     context,
+            //     MaterialPageRoute(
+            //         builder: (context) => ChatPage(
+            //           peerId: userChat.id,
+            //           peerAvatar: userChat.photoUrl,
+            //           peerNickname: userChat.displayName,
+            //           userAvatar: firebaseAuth.currentUser!.photoURL!,
+            //         )));
+          },
+          child: ListTile(
+            leading: userChat.photoUrl.isNotEmpty
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(30),
+                    child: Image.network(
+                      userChat.photoUrl,
+                      fit: BoxFit.cover,
+                      width: 50,
+                      height: 50,
+                      loadingBuilder: (BuildContext ctx, Widget child,
+                          ImageChunkEvent? loadingProgress) {
+                        if (loadingProgress == null) {
+                          return child;
+                        } else {
+                          return SizedBox(
+                            width: 50,
+                            height: 50,
+                            child: CircularProgressIndicator(
+                                color: Colors.grey,
+                                value: loadingProgress.expectedTotalBytes !=
+                                        null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                    : null),
+                          );
+                        }
+                      },
+                      errorBuilder: (context, object, stackTrace) {
+                        return const Icon(Icons.account_circle, size: 50);
+                      },
+                    ),
+                  )
+                : const Icon(
+                    Icons.account_circle,
+                    size: 50,
+                  ),
+            title: Text(
+              userChat.displayName,
+              style: const TextStyle(color: Colors.black),
+            ),
+          ),
+        );
+      }
+    } else {
+      return const SizedBox.shrink();
+    }
+  }
+
   Future<void> googleSignOut(BuildContext context) async {
     authProvider.googleSignOut();
     Navigator.push(
         context, MaterialPageRoute(builder: (context) => const LoginPage()));
   }
 
-  Future<bool> onBackPress(BuildContext context) async {
+  Future<bool> onBackPress() async {
     openDialog(context);
     return Future.value(false);
   }
@@ -230,5 +344,4 @@ class _HomePageState extends State<HomePage> {
       });
     }
   }
-
 }
