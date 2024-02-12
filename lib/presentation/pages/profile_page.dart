@@ -61,7 +61,32 @@ class _ProfilePageState extends State<ProfilePage> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(60),
-                  child: Image.network(photoUrl),
+                  child: Image.network(photoUrl,fit: BoxFit.cover,
+                    width: 120,
+                    height: 120,
+                    errorBuilder: (context, object, stackTrace) {
+                      return const Icon(Icons.account_circle, size: 90,
+                        color: Colors.grey,);
+                    },
+                  loadingBuilder: (BuildContext context, Widget child,
+                      ImageChunkEvent? loadingProgress){
+                    if (loadingProgress == null) {
+                      return child;
+                    }
+                    return SizedBox(
+                      width: 90,
+                      height: 90,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: Colors.grey,
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes! : null,
+                        ),
+                      ),
+                    );
+                  },
+                  ),
                 )
               ],
             ),

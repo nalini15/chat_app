@@ -38,7 +38,7 @@ class _LoginPageState extends State<LoginPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text(
-              'Welcome To Smart Chat',
+              'Chat title login',
               style: TextStyle(
                   fontSize: 20,
                   color: Colors.black,

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:chat_app/domain/chat_user_model.dart';
 import 'package:chat_app/domain/constants.dart';
 import 'package:chat_app/presentation/pages/login.dart';
+import 'package:chat_app/presentation/pages/profile_page.dart';
 import 'package:chat_app/presentation/provider/home_provider.dart';
 import 'package:chat_app/presentation/provider/auth_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -66,7 +67,14 @@ class _HomePageState extends State<HomePage> {
           IconButton(
               onPressed: () => googleSignOut(context),
               icon: const Icon(Icons.logout)),
-          IconButton(onPressed: () {}, icon: const Icon(Icons.person)),
+          IconButton(
+              onPressed: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const ProfilePage()));
+              },
+              icon: const Icon(Icons.person)),
         ],
       ),
       body: WillPopScope(
@@ -111,6 +119,11 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ],
               ),
+              Positioned(
+                child: isLoading
+                    ? const CircularProgressIndicator()
+                    : const SizedBox.shrink(),
+              )
             ],
           )),
     );
@@ -118,8 +131,10 @@ class _HomePageState extends State<HomePage> {
 
   Widget buildSearchBar() {
     return Container(
+      height: 50,
+      margin: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(30), color: Colors.yellow),
+          borderRadius: BorderRadius.circular(30), color: Colors.blueGrey),
       child: Row(
         children: [
           const SizedBox(
